@@ -1,0 +1,88 @@
+
+module gw{
+
+type dir = enum{left, right, up, down};
+type agent = enum{human, machine};
+type rmap = enum{rmap1, rmap2};
+
+var x : integer;
+var y : integer; 
+var operator : agent;
+var reward_map : rmap;
+var switch_operator : boolean;
+var communicate : boolean;
+var movement : dir;
+var value : int;
+var mvmt_reward : int;
+var comm_reward : int;
+var control_reward : int;
+
+procedure move (current_x: integer, current_y: integer, direction: dir)
+modifies x;
+modifies y;
+{
+    case
+    (direction == left) : {
+        if (current_x>0) {new_x = current_x - 1;} 
+        else{new_x = current_x;}
+        new_y = current_y;
+    }
+    (direction == right) : {
+        if (current_x<3) {new_x = current_x + 1;} 
+        else{new_x = current_x;}
+        new_y = current_y;
+    }
+    (direction == up) : {
+        if (current_y>0) {new_y = current_y - 1;}
+        else{new_y = current_y;}
+        new_x = current_x;
+    }
+    (direction == down) : {
+        if (current_y<2) {new_y = current_y + 1;}
+        else{new_y = current_y;}
+        new_x = current_x;
+    
+    }
+    esac
+}
+
+procedure get_mvmt_reward(x_val: int, y_val: int)
+modifies mvmt_reward;
+{
+    if (reward_map == rmap1){
+        if ((x_val == 0) && (y_val == 0)){mvmt_reward = 0;}
+        else{if ((x_val == 1) && (y_val == 3)){mvmt_reward = -5;}
+        else{if ((x_val == 2) && (y_val == 3)){mvmt_reward = 100;}
+        else{mvmt_reward = -1;}
+        }
+        }
+}
+    else{
+        if ((x_val == 0) && (y_val == 0)){mvmt_reward = 0;}
+        else{if ((x_val == 2) && (y_val == 2)){mvmt_reward = -5;}
+        else{if ((x_val == 2) && (y_val == 3)){mvmt_reward = 100;}
+        else{mvmt_reward = -1;}
+        }
+        }
+    }
+}
+
+init{
+    x = 0;
+    y = 0;
+    operator = human;
+}
+
+next{
+    call move(x, y, movement);
+    call get_mvmt_reward(x', y');
+    if (communicate){comm_reward'=-1;}
+    else{comm_reward'=0;}
+    if (switch_operator){control_reward'=-5;}
+    else{control_reward' = -1;}
+    value' = value + mvmt_reward' + comm_reward' + control_reward';
+    
+}
+
+}
+
