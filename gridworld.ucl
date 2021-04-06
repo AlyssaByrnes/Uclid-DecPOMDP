@@ -1,5 +1,5 @@
 
-module gw{
+module main{
 
 type dir = enum{left, right, up, down};
 type agent = enum{human, machine};
@@ -9,79 +9,91 @@ var x : integer;
 var y : integer; 
 var operator : agent;
 var reward_map : rmap;
-var switch_operator : boolean;
-var communicate : boolean;
-var movement : dir;
-var value : int;
-var mvmt_reward : int;
-var comm_reward : int;
-var control_reward : int;
+input switch_operator : boolean;
+input communicate : boolean;
+input movement : dir;
+var value : integer;
+var mvmt_reward : integer;
+var comm_reward : integer;
+var control_reward : integer;
+var move_bool : boolean;
 
-procedure move (current_x: integer, current_y: integer, direction: dir)
-modifies x;
-modifies y;
+procedure move (current_x: integer, current_y: integer, direction: dir, reward_map: rmap)
+modifies x, y, mvmt_reward, move_bool;
 {
     case
     (direction == left) : {
-        if (current_x>0) {new_x = current_x - 1;} 
-        else{new_x = current_x;}
-        new_y = current_y;
+        if (current_x>1) {x = current_x - 1; move_bool = true;} 
+        else{x = current_x;  move_bool = false;}
+        y = current_y;
     }
     (direction == right) : {
-        if (current_x<3) {new_x = current_x + 1;} 
-        else{new_x = current_x;}
-        new_y = current_y;
+        if (current_x<2) {x = current_x + 1; move_bool = true;} 
+        else{x = current_x;  move_bool = false;}
+        y = current_y;
     }
     (direction == up) : {
-        if (current_y>0) {new_y = current_y - 1;}
-        else{new_y = current_y;}
-        new_x = current_x;
+        if (current_y>1) {y = current_y - 1; move_bool = true;}
+        else{y = current_y;  move_bool = false;}
+        x = current_x;
     }
     (direction == down) : {
-        if (current_y<2) {new_y = current_y + 1;}
-        else{new_y = current_y;}
-        new_x = current_x;
+        if (current_y<3) {y = current_y + 1; move_bool = true;}
+        else{y = current_y;  move_bool = false;}
+        x = current_x;
     
     }
     esac
-}
-
-procedure get_mvmt_reward(x_val: int, y_val: int)
-modifies mvmt_reward;
-{
+    if(move_bool == true){
     if (reward_map == rmap1){
-        if ((x_val == 0) && (y_val == 0)){mvmt_reward = 0;}
-        else{if ((x_val == 1) && (y_val == 3)){mvmt_reward = -5;}
-        else{if ((x_val == 2) && (y_val == 3)){mvmt_reward = 100;}
+        if ((x == 1) && (y == 1)){mvmt_reward = 0;}
+        else{if ((x == 1) && (y == 3)){mvmt_reward = -5;}
+        else{if ((x == 2) && (y == 3)){mvmt_reward = 100;}
         else{mvmt_reward = -1;}
         }
         }
 }
     else{
-        if ((x_val == 0) && (y_val == 0)){mvmt_reward = 0;}
-        else{if ((x_val == 2) && (y_val == 2)){mvmt_reward = -5;}
-        else{if ((x_val == 2) && (y_val == 3)){mvmt_reward = 100;}
+        if ((x == 1) && (y == 1)){mvmt_reward = 0;}
+        else{if ((x == 2) && (y == 2)){mvmt_reward = -5;}
+        else{if ((x == 2) && (y == 3)){mvmt_reward = 100;}
         else{mvmt_reward = -1;}
         }
         }
     }
+    }
+    else {mvmt_reward = 0;}
 }
 
+
+
 init{
-    x = 0;
-    y = 0;
+    x = 1;
+    y = 1;
     operator = human;
+    value = 0;
 }
 
 next{
-    call move(x, y, movement);
-    call get_mvmt_reward(x', y');
+    reward_map' = reward_map;
+    call move(x, y, movement, reward_map);
     if (communicate){comm_reward'=-1;}
     else{comm_reward'=0;}
     if (switch_operator){control_reward'=-5;}
-    else{control_reward' = -1;}
+    else{control_reward' = 0;}
     value' = value + mvmt_reward' + comm_reward' + control_reward';
     
+}
+
+assume no_control_switch : (switch_operator == false);
+assume no_comm: (communicate == false);
+invariant value_limit :  (value <= 98);
+
+control{
+    x = unroll(4);
+    check;
+    print_results;
+    x.print_cex(value, x, y, mvmt_reward, comm_reward, control_reward, movement);
 }
 
 }
